@@ -1,8 +1,15 @@
 import OpenAi from "openai";
 import dotenv from "dotenv";
+import { Agent, fetch } from "undici";
 import { TrainingPlan, UserProfile } from "../../types";
 
 dotenv.config();
+
+const ipv4Agent = new Agent({
+  connect: {
+    family: 4, // Forces IPv4 sockets and completely skips broken IPv6 routes
+  },
+});
 
 export async function generateTrainingPlan(
   profile: UserProfile | Record<string, any>,
@@ -31,34 +38,23 @@ export async function generateTrainingPlan(
       "HTTP-Referer": process.env.BASE_URL || "http://localhost:3001",
       "X-OpenRouter-Title": "GymAI Plan Generator",
     },
+    fetch: fetch as unknown as typeof globalThis.fetch,
+    fetchOptions: {
+      dispatcher: ipv4Agent,
+    },
+    timeout: 60 * 1000, // 60 seconds
+    maxRetries: 2,
   });
+
+  console.log("REACHING HERE");
 
   // Build yje prompt
   const prompt = buildPrompt(normalizedProfile);
 
   try {
-    // const completion = await openai.chat.completions.create({
-    //   model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    //   messages: [
-    //     {
-    //       role: "system",
-    //       content:
-    //         "You are an expert fitness trainer and program designer. You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text.",
-    //     },
-    //     {
-    //       role: "user",
-    //       content: prompt,
-    //     },
-    //   ],
-    //   temperature: 0.7,
-    //   response_format: { type: "json_object" },
-    // });
-    // const content = completion.choices[0].message.content;
-
-    // TESTING
-    const completion = await openai.responses.create({
+    const completion = await openai.chat.completions.create({
       model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-      input: [
+      messages: [
         {
           role: "system",
           content:
@@ -70,13 +66,32 @@ export async function generateTrainingPlan(
         },
       ],
       temperature: 0.7,
-      text: {
-        format: {
-          type: "json_object",
-        },
-      },
+      response_format: { type: "json_object" },
     });
-    const content = completion.output_text;
+    const content = completion.choices[0].message.content;
+
+    // // TESTING
+    // const completion = await openai.responses.create({
+    //   model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    //   input: [
+    //     {
+    //       role: "system",
+    //       content:
+    //         "You are an expert fitness trainer and program designer. You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text.",
+    //     },
+    //     {
+    //       role: "user",
+    //       content: prompt,
+    //     },
+    //   ],
+    //   temperature: 0.7,
+    //   text: {
+    //     format: {
+    //       type: "json_object",
+    //     },
+    //   },
+    // });
+    // const content = completion.output_text;
     // //
 
     if (!content) {
