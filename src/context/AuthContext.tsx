@@ -1,7 +1,9 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -22,7 +24,9 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [neonUser, setNeonUser] = useState<any>(null);
+  const [plan, setPlan] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isRefreshingRef = useRef(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -40,6 +44,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     loadUser();
+  }, []);
+
+  // refreshData memoize
+  const refreshData = useCallback(async () => {
+    if(!neonUser || isRefreshingRef.current) return;
+
+    isRefreshingRef.current = true;
+
+    try {
+      // Fetch profile
+      // const profileData = 
+
+      // Fetch Plan
+      const planData = await api.getCurrentPlan(neonUser?.id).catch(()=> null);
+      if(planData) {
+
+      }
+
+    } catch(err){
+      console.error("Error refreshing data", err);
+    } finally {
+      isRefreshingRef.current = false;
+    }
   }, []);
 
   // Save Profile
