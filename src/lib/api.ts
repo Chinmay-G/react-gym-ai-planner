@@ -11,7 +11,12 @@ async function post(path: string, body: object) {
     if(!res.ok)
         throw new Error((await res.json().catch(()=> ({}))).error || "Request failed");
 
-    return res.json();
+    const data = await res.json();
+
+    console.log('Generated response data: ', data);
+
+    return data;
+    // return await res.json();
 }
 
 async function get(path: string) {
@@ -20,18 +25,18 @@ async function get(path: string) {
     if(!res.ok)
         throw new Error((await res.json().catch(()=> ({}))).error || "Request failed");
 
-    return res.json();
+    return await res.json();
 }
 
 export const api = {
-    saveProfile: (userId: string, profile: Omit<UserProfile, "userId" | "updatedAt">) => {
-        return post("/profile", {userId, ...profile});
+    saveProfile: async (userId: string, profile: Omit<UserProfile, "userId" | "updatedAt">) => {
+        return await post("/profile", {userId, ...profile});
     },
-    generatePlan: (userId: string) => {
-        return post("/plan/generate", {userId});
+    generatePlan: async (userId: string) => {
+        return await post("/plan/generate", {userId});
     },
 
-    getCurrentPlan: (userId: string) => {
-        return get(`/plan/current?userId=${userId}`);
+    getCurrentPlan: async (userId: string) => {
+        return await get(`/plan/current?userId=${userId}`);
     }
 }

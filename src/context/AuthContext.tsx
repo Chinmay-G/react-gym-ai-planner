@@ -7,26 +7,30 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { User, UserProfile } from "../types";
+import type { TrainingPlan, User, UserProfile } from "../types";
 import { neon } from "../lib/neon";
 import { api } from "../lib/api";
 
 interface AuthContextType {
   user: User | null;
+  plan: TrainingPlan | null;
   isLoading: boolean;
   saveProfile: (
     profile: Omit<UserProfile, "userId" | "updatedAt">,
   ) => Promise<void>;
   generatePlan: () => Promise<void>;
+  refreshData: () => Promise<void>;
+  isRefreshing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [neonUser, setNeonUser] = useState<any>(null);
-  const [plan, setPlan] = useState<any>(null);
+  const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const isRefreshingRef = useRef(false)
+  const [isRefreshing, setIsRefreshing] = useState(true);
+  const isRefreshingRef = useRef(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -46,28 +50,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    async function callBack() {
+      if (!isLoading) {
+        if (neonUser?.id) {
+          await refreshData();
+        } else {
+          setPlan(null);
+        }
+        setIsLoading(false);
+      }
+    }
+    callBack();
+  }, [neonUser?.id, isLoading]);
+
   // refreshData memoize
   const refreshData = useCallback(async () => {
-    if(!neonUser || isRefreshingRef.current) return;
+    if (!neonUser || isRefreshingRef.current) return;
 
     isRefreshingRef.current = true;
-
+    setIsRefreshing(true);
     try {
       // Fetch profile
-      // const profileData = 
+      // const profileData =
 
       // Fetch Plan
-      const planData = await api.getCurrentPlan(neonUser?.id).catch(()=> null);
-      if(planData) {
-
+      const planData = await api.getCurrentPlan(neonUser?.id).catch(() => null);
+      console.log("PLAN DATA: ", planData);
+      if (planData) {
+        setPlan({
+          id: planData.id,
+          userId: planData.userId,
+          overview: planData.planJson.overview,
+          weeklySchedule: planData.planJson.weeklySchedule,
+          progression: planData.planJson.progression,
+          version: planData.version,
+          createdAt: planData.createdAt,
+        });
       }
-
-    } catch(err){
+    } catch (err) {
       console.error("Error refreshing data", err);
     } finally {
       isRefreshingRef.current = false;
+      setIsRefreshing(false);
     }
-  }, []);
+  }, [neonUser?.id]);
 
   // Save Profile
   async function saveProfile(
@@ -87,10 +114,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     await api.generatePlan(neonUser?.id);
+    console.log('Plan generated !');
+    await refreshData();
   }
 
   return (
-    <AuthContext.Provider value={{ user: neonUser, isLoading, saveProfile, generatePlan }}>
+    <AuthContext.Provider
+      value={{
+        user: neonUser,
+        plan,
+        isLoading,
+        saveProfile,
+        generatePlan,
+        refreshData,
+        isRefreshing: isRefreshing
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

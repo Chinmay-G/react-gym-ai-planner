@@ -15,3 +15,36 @@ export interface UserProfile {
     preferredSplit: 'fill_body' | "upper_lower" | "ppl" | "custom",
     updatedAt: string
 }
+
+export interface PlanOverview {
+  goal: string;
+  frequency: string;
+  split: string;
+  notes: string;
+}
+
+export interface Exercise {
+  name: string;
+  sets: string;
+  reps: string;
+  rest: string;
+  rpe: string;
+  notes?: string;
+  alternatives?: string[];
+}
+
+export interface DaySchedule {
+  day: string;
+  focus: string;
+  exercises: Exercise[];
+}
+
+export interface TrainingPlan {
+  id: string;
+  userId: string;
+  overview: PlanOverview;
+  weeklySchedule: DaySchedule[];
+  progression: string;
+  version: number;
+  createdAt: string;
+}

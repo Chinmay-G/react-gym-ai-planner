@@ -53,6 +53,14 @@ planRouter.post("/generate", async (req: Request, res: Response) => {
         version: nextVersion,
       },
     });
+
+    res.status(201).json({success: true, 
+      id: newPlan.id,
+      userId: newPlan.user_id,
+      planJson: newPlan.plan_json,
+      planText: newPlan.plan_text,
+      createdAt: newPlan.created_at,
+    })
   } catch (err) {
     console.log("Error genrating plan: ", err);
     res.status(500).json({ error: "Failed to generate plan" });
@@ -82,6 +90,7 @@ planRouter.get("/current", async (req: Request, res: Response) => {
       planJson: plan.plan_json,
       planText: plan.plan_text,
       createdAt: plan.created_at,
+      version: plan.version,
     });
   } catch (err) {
     console.log("Error genrating plan: ", err);
