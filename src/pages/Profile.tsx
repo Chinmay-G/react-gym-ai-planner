@@ -4,9 +4,10 @@ import { Calendar, Dumbbell, Loader2, RefreshCcw, Target, TrendingUp } from "luc
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { PlanDisplay } from "../components/plan/PlanDisplay";
+import type { DaySchedule } from "../types";
 
 function Profile() {
-  const { user, isLoading, plan, isRefreshing, generatePlan } = useAuth();
+  const { user, isLoading, plan, isRefreshing, generatePlan, isGenerating } = useAuth();
 
   if (!user && !isLoading) {
     return <Navigate to="/auth.sign-in" replace />;
@@ -16,7 +17,7 @@ function Profile() {
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (isLoading || isRefreshing) {
+  if (isLoading || isRefreshing || isGenerating) {
     return <Loader2 className="mt-30 w-12 h-12 text-[var(--color-accent)] mx-auto mb-6 animate-spin" />;
   }
 
@@ -102,7 +103,7 @@ function Profile() {
 
         {/* Weekly Schedule */}
         <h2 className="font-semibold text-xl mb-4">Weekly Schedule</h2>
-        <PlanDisplay weeklySchedule={plan?.weeklySchedule} />
+        <PlanDisplay weeklySchedule={plan?.weeklySchedule as DaySchedule[]} />
 
         <Card variant="bordered" className="mb-8">
           <h2 className="font-semibold text-lg mb-2">Progression Strategy</h2>

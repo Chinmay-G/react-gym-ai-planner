@@ -21,6 +21,7 @@ interface AuthContextType {
   generatePlan: () => Promise<void>;
   refreshData: () => Promise<void>;
   isRefreshing: boolean;
+  isGenerating: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -31,6 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const isRefreshingRef = useRef(false);
+
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -113,9 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error("User must be authenticated to generate plan");
     }
 
-    await api.generatePlan(neonUser?.id);
-    console.log('Plan generated !');
-    await refreshData();
+    try {
+      setIsGenerating(true);
+      await api.generatePlan(neonUser?.id);
+      console.log('Plan generated !');
+      await refreshData();
+    } catch(err) {} finally { setIsGenerating(false) }
   }
 
   return (
@@ -127,7 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         saveProfile,
         generatePlan,
         refreshData,
-        isRefreshing: isRefreshing
+        isRefreshing: isRefreshing,
+        isGenerating
       }}
     >
       {children}
